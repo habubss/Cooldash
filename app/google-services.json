@@ -1,0 +1,68 @@
+{
+  "project_info": {
+    "project_number": "144838979374",
+    "firebase_url": "https://soylash-69594-default-rtdb.firebaseio.com",
+    "project_id": "soylash-69594",
+    "storage_bucket": "soylash-69594.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:144838979374:android:9243cfd819fdf56fbf14bf",
+        "android_client_info": {
+          "package_name": "com.example.soylash"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDo8HXRLtPgf_a3yhjcLfeRpySAzwvdi70"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:144838979374:android:e7d2bc1af83ccc11bf14bf",
+        "android_client_info": {
+          "package_name": "habub.samat.soylash4"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDo8HXRLtPgf_a3yhjcLfeRpySAzwvdi70"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:144838979374:android:f09caa674dfe1ecdbf14bf",
+        "android_client_info": {
+          "package_name": "hack.project.cooldash"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDo8HXRLtPgf_a3yhjcLfeRpySAzwvdi70"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,25 @@
+<resources>
+    <string name="app_name">CoolDash</string>
+    <string name="title_word_learning">Изучение слов</string>
+    <string name="title_favorites">Избранное</string>
+    <string name="title_guess_translation">Угадай перевод</string>
+    <string name="title_listening">Аудирование</string>
+    <string name="title_picture_quiz">Картинка</string>
+    <string name="title_translater">Переводчик</string>
+    <string name="title_search">Поиск</string>
+    <string-array name="languages">
+        <item>Татарский</item>
+        <item>Русский</item>
+    </string-array>
+
+    <string name="enter_text">Введите текст для перевода</string>
+    <string name="translate">Перевести</string>
+    <string name="enter_text_hint">Введите текст</string>
+    <string name="translation_error">Ошибка перевода: %d</string>
+    <string name="server_error">Ошибка сервера: %s</string>
+    <string name="network_error">Ошибка сети: %s</string>
+    <string name="parse_error">Ошибка обработки ответа</string>
+    <string name="copied_to_clipboard">Текст скопирован</string>
+    <string name="swap_languages">Поменять языки местами</string>
+
+</resources>
