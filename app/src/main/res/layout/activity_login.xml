@@ -80,6 +80,18 @@
             android:layout_marginBottom="24dp"
             style="@style/Widget.MaterialComponents.Button"/>
 
+        <!-- Guest Login Button -->
+        <Button
+            android:id="@+id/btn_guest"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Войти как гость"
+            android:textColor="@android:color/white"
+            android:backgroundTint="@color/primary_dark"
+            android:textSize="16sp"
+            android:layout_marginBottom="24dp"
+            style="@style/Widget.MaterialComponents.Button"/>
+
         <!-- Registration Prompt -->
         <LinearLayout
             android:layout_width="match_parent"

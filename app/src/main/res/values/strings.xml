@@ -22,4 +22,6 @@
     <string name="copied_to_clipboard">Текст скопирован</string>
     <string name="swap_languages">Поменять языки местами</string>
 
+    <string name="deepseek_api_url">https://api.deepseek.com/v1/chat/completions</string>
+    <string name="deepseek_api_key">sk-c4ecaf21672146fc9f59641289e46442</string>
 </resources>

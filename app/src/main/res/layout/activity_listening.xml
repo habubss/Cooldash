@@ -52,6 +52,12 @@
                 app:cornerRadius="16dp"
                 android:layout_marginBottom="24dp"/>
 
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="24dp"
+            android:background="@color/bezheviy">
             <!-- Варианты ответов -->
             <GridLayout
                 android:id="@+id/optionsGrid"
@@ -65,6 +71,7 @@
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent">
             </GridLayout>
+        </LinearLayout>
 
             <!-- Кнопка следующий вопрос -->
             <com.google.android.material.button.MaterialButton

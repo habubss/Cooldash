@@ -9,6 +9,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -88,6 +89,7 @@ public class FavoritesActivity extends AppCompatActivity {
         });
     }
 
+    @SuppressLint("ResourceAsColor")
     private void addFavoriteCard(Map<String, String> wordData) {
         CardView card = new CardView(this);
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
@@ -101,6 +103,7 @@ public class FavoritesActivity extends AppCompatActivity {
         LinearLayout layout = new LinearLayout(this);
         layout.setOrientation(LinearLayout.VERTICAL);
         layout.setPadding(24, 24, 24, 24);
+        layout.setBackgroundResource(R.color.bezheviy);
 
         // Word
         TextView wordText = new TextView(this);
@@ -120,17 +123,48 @@ public class FavoritesActivity extends AppCompatActivity {
         // Buttons
         LinearLayout buttonsLayout = new LinearLayout(this);
         buttonsLayout.setOrientation(LinearLayout.HORIZONTAL);
+        buttonsLayout.setWeightSum(2); // Устанавливаем сумму весов
 
         // Play button
-        Button playButton = new Button(this);
-        playButton.setText("Озвучить");
+        ImageView playButton = new ImageView(this);
+        LinearLayout.LayoutParams playParams = new LinearLayout.LayoutParams(
+                0, // ширина будет определяться weight
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        playParams.weight = 1; // занимает половину пространства
+        playParams.setMargins(0, 0, 5, 16); // отступ справа 5dp и снизу 16dp
+        playButton.setLayoutParams(playParams);
+        playButton.setImageResource(R.drawable.spell);
+        playButton.setAdjustViewBounds(true);
+        playButton.setClickable(true);
+        playButton.setFocusable(true);
+        playButton.setScaleType(ImageView.ScaleType.FIT_CENTER);
         playButton.setOnClickListener(v -> synthesizeText(wordData.get("word")));
+
+        // Установка foreground для ripple эффекта (если нужно)
+        // playButton.setForeground(getResources().getDrawable(R.drawable.ripple_effect));
+
         buttonsLayout.addView(playButton);
 
         // Delete button
-        Button deleteButton = new Button(this);
-        deleteButton.setText("Удалить");
+        ImageView deleteButton = new ImageView(this);
+        LinearLayout.LayoutParams deleteParams = new LinearLayout.LayoutParams(
+                0, // ширина будет определяться weight
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        deleteParams.weight = 1; // занимает половину пространства
+        deleteParams.setMargins(5, 0, 0, 16); // отступ слева 5dp и снизу 16dp
+        deleteButton.setLayoutParams(deleteParams);
+        deleteButton.setImageResource(R.drawable.delete);
+        deleteButton.setAdjustViewBounds(true);
+        deleteButton.setClickable(true);
+        deleteButton.setFocusable(true);
+        deleteButton.setScaleType(ImageView.ScaleType.FIT_CENTER);
         deleteButton.setOnClickListener(v -> removeFavorite(wordData.get("word")));
+
+        // Установка foreground для ripple эффекта (если нужно)
+        // deleteButton.setForeground(getResources().getDrawable(R.drawable.ripple_effect));
+
         buttonsLayout.addView(deleteButton);
 
         layout.addView(buttonsLayout);

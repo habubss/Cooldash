@@ -67,6 +67,17 @@ public class LoginActivity extends AppCompatActivity {
             }
         });
 
+        binding.btnGuest.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // Создаем интент с флагом, указывающим на гостевой режим
+                Intent intent = new Intent(LoginActivity.this, MainActivity.class);
+                intent.putExtra("isGuest", true);
+                startActivity(intent);
+                finish();
+            }
+        });
+
         binding.textRegister.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {

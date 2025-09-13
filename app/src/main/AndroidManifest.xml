@@ -1,117 +1,105 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
-
-    <application
-        android:usesCleartextTraffic="true"
-        android:name="hack.project.cooldash.CooldashApplication"
-        android:allowBackup="true"
-        android:icon="@mipmap/ic_launcher"
-        android:label="@string/app_name"
-        android:roundIcon="@mipmap/ic_launcher_round"
-        android:supportsRtl="true"
-        android:theme="@style/AppTheme"
-        tools:ignore="GoogleAppIndexingWarning">
-
-        <!-- Главная активность -->
-        <activity
-            android:name="hack.project.cooldash.View.MainActivity"
-            android:exported="true"
-            android:label="@string/app_name"
-            android:theme="@style/AppTheme.NoActionBar">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
-
-        <!-- Активность изучения слов -->
-        <activity
-            android:name="hack.project.cooldash.View.WordLearningActivity"
-            android:label="Изучение слов"
-            android:exported="false"
-            android:theme="@style/AppTheme.NoActionBar"/>
-
-        <!-- Активность избранного -->
-        <activity
-            android:name="hack.project.cooldash.View.FavoritesActivity"
-            android:exported="false"
-            android:label="@string/title_favorites"
-            android:parentActivityName="hack.project.cooldash.View.MainActivity">
-            <meta-data
-                android:name="android.support.PARENT_ACTIVITY"
-                android:value="hack.project.cooldash.View.MainActivity" />
-        </activity>
-
-        <!-- Активность переводчика -->
-        <activity
-            android:name="hack.project.cooldash.View.TranslaterActivity"
-            android:exported="false"
-            android:label="@string/title_translater"
-            android:theme="@style/AppTheme.NoActionBar"
-            android:parentActivityName="hack.project.cooldash.View.MainActivity">
-            <meta-data
-                android:name="android.support.PARENT_ACTIVITY"
-                android:value="hack.project.cooldash.View.MainActivity" />
-        </activity>
-
-        <activity
-            android:name="hack.project.cooldash.View.SearchActivity"
-            android:label="Поиск слов"
-            android:parentActivityName="hack.project.cooldash.View.MainActivity"
-            android:exported="false">
-            <meta-data
-                android:name="android.support.PARENT_ACTIVITY"
-                android:value="hack.project.cooldash.View.MainActivity" />
-        </activity>
-
-        <!-- Активность угадай перевод -->
-        <activity
-            android:name="hack.project.cooldash.View.GuessTranslationActivity"
-            android:exported="false"
-            android:label="@string/title_guess_translation"
-            android:parentActivityName="hack.project.cooldash.View.MainActivity">
-            <meta-data
-                android:name="android.support.PARENT_ACTIVITY"
-                android:value="hack.project.cooldash.View.MainActivity" />
-        </activity>
-
-        <!-- Активность аудирования -->
-        <activity
-            android:name="hack.project.cooldash.View.ListeningActivity"
-            android:exported="false"
-            android:label="@string/title_listening"
-            android:parentActivityName="hack.project.cooldash.View.MainActivity">
-            <meta-data
-                android:name="android.support.PARENT_ACTIVITY"
-                android:value="hack.project.cooldash.View.MainActivity" />
-        </activity>
-
-        <!-- Активность логина -->
-        <activity
-            android:name="hack.project.cooldash.View.LoginActivity"
-            android:exported="true"
-            android:label="Login"
-            android:theme="@style/AppTheme.NoActionBar" />
-
-        <!-- Активность регистрации -->
-        <activity
-            android:name="hack.project.cooldash.View.RegisterActivity"
-            android:exported="true"
-            android:label="Register"
-            android:theme="@style/AppTheme.NoActionBar" />
-
-        <!-- Активность вебвью -->
-        <activity android:name="hack.project.cooldash.View.WebViewActivity" />
-
-        <uses-library android:name="org.apache.http.legacy" android:required="false"/>
-    </application>
-
     <!-- Разрешения -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+
+    <application
+        android:name=".CooldashApplication"
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme"
+        android:usesCleartextTraffic="true"
+        tools:ignore="GoogleAppIndexingWarning">
+        <activity
+            android:name=".View.DailyActivity"
+            android:exported="false" />
+        <!-- Главная активность -->
+        <activity
+            android:name=".View.MainActivity"
+            android:exported="true"
+            android:label="@string/app_name"
+            android:theme="@style/AppTheme.NoActionBar">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity> <!-- Активность изучения слов -->
+        <activity
+            android:name=".View.WordLearningActivity"
+            android:exported="false"
+            android:label="Изучение слов"
+            android:theme="@style/AppTheme.NoActionBar" /> <!-- Активность избранного -->
+        <activity
+            android:name=".View.FavoritesActivity"
+            android:exported="false"
+            android:label="@string/title_favorites"
+            android:parentActivityName=".View.MainActivity">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="hack.project.cooldash.View.MainActivity" />
+        </activity>
+        <!-- Активность переводчика -->
+        <activity
+            android:name=".View.TranslaterActivity"
+            android:exported="false"
+            android:label="@string/title_translater"
+            android:parentActivityName=".View.MainActivity"
+            android:theme="@style/AppTheme.NoActionBar">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="hack.project.cooldash.View.MainActivity" />
+        </activity>
+        <activity
+            android:name=".View.SearchActivity"
+            android:exported="false"
+            android:label="Поиск слов"
+            android:parentActivityName=".View.MainActivity">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="hack.project.cooldash.View.MainActivity" />
+        </activity> <!-- Активность угадай перевод -->
+        <activity
+            android:name=".View.GuessTranslationActivity"
+            android:exported="false"
+            android:label="@string/title_guess_translation"
+            android:parentActivityName=".View.MainActivity">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="hack.project.cooldash.View.MainActivity" />
+        </activity> <!-- Активность аудирования -->
+        <activity
+            android:name=".View.ListeningActivity"
+            android:exported="false"
+            android:label="@string/title_listening"
+            android:parentActivityName=".View.MainActivity">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="hack.project.cooldash.View.MainActivity" />
+        </activity> <!-- Активность логина -->
+        <activity
+            android:name=".View.LoginActivity"
+            android:exported="true"
+            android:label="Login"
+            android:theme="@style/AppTheme.NoActionBar" /> <!-- Активность регистрации -->
+        <activity
+            android:name=".View.RegisterActivity"
+            android:exported="true"
+            android:label="Register"
+            android:theme="@style/AppTheme.NoActionBar" /> <!-- Активность вебвью -->
+        <activity android:name=".View.WebViewActivity" />
+
+        <uses-library
+            android:name="org.apache.http.legacy"
+            android:required="false" />
+    </application>
 
 </manifest>

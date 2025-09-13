@@ -1,13 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="primary">#4F46E5</color>
-    <color name="primary_dark">#0b025e</color>
+    <color name="primary">#3a3335</color>
+    <color name="bezheviy">#fbc976</color>
+    <color name="primary_dark">#3a3335</color>
     <color name="accent">#4F46E5</color>
-    <color name="background">#F5F7FA</color>
+    <color name="background">#F8f5f0</color>
     <color name="card_background">#FFFFFF</color>
-    <color name="text_primary">#1F2937</color>
-    <color name="text_secondary">#6B7280</color>
-    <color name="text_disabled">#9CA3AF</color>
+    <color name="text_primary">#3a3335</color>
+    <color name="text_secondary">#3a3335</color>
+    <color name="text_disabled">#3a3335</color>
     <color name="red">#F44336</color>
     <color name="green">#4CAF50</color>
     <color name="yellow">#FFEB3B</color>

@@ -84,7 +84,7 @@ public class WordLearningActivity extends AppCompatActivity {
     private CheckBox checkAll, checkNouns, checkVerbs, checkAdjectives, checkAdverbs;
     private MediaPlayer mediaPlayer;
     private MediaRecorder mediaRecorder;
-    private Button btnSpeak, btnRecord, btnCheck;
+    private ImageView btnSpeak, btnRecord, btnCheck;
     private String currentAudioPath;
     private boolean isRecording = false;
     private String currentWord;
@@ -93,7 +93,7 @@ public class WordLearningActivity extends AppCompatActivity {
     private SeekBar audioSeekBar;
     private Handler seekBarHandler = new Handler();
     private Runnable updateSeekBar;
-
+    private boolean isGuest = false;
 
     private void toggleFavorite() {
         if (currentWord == null) return;
@@ -119,15 +119,13 @@ public class WordLearningActivity extends AppCompatActivity {
     }
 
     private void updateFavoriteButton() {
-        Button btn = findViewById(R.id.btnAddToFavorites);
+        ImageView btn = findViewById(R.id.btnAddToFavorites);
         if (isFavorite) {
-            btn.setText("Добавлено в избранное");
+            btn.setImageResource(R.drawable.infav);
             btn.setEnabled(false);
-            btn.setBackgroundColor(getResources().getColor(R.color.gray));
         } else {
-            btn.setText("Добавить в избранное");
+            btn.setImageResource(R.drawable.tofav);
             btn.setEnabled(true);
-            btn.setBackgroundColor(getResources().getColor(R.color.green));
         }
     }
 
@@ -136,6 +134,10 @@ public class WordLearningActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_word_learning);
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+
+        // Проверяем гостевой режим
+        isGuest = getIntent().getBooleanExtra("isGuest", false);
+
         allWordsData = loadWordsFromJson();
 
         setupFilter();
@@ -148,7 +150,6 @@ public class WordLearningActivity extends AppCompatActivity {
 
         btnRecord = findViewById(R.id.btnRecord);
         btnRecord.setOnClickListener(v -> toggleRecording());
-        btnRecord.setBackgroundColor(getResources().getColor(R.color.primary_dark));
 
         btnCheck = findViewById(R.id.btnCheck);
         btnCheck.setOnClickListener(v -> checkPronunciation());
@@ -162,13 +163,24 @@ public class WordLearningActivity extends AppCompatActivity {
 
         requestAudioPermissions();
 
-        favoritesRef = FirebaseDatabase.getInstance().getReference()
-                .child("Users")
-                .child(FirebaseAuth.getInstance().getCurrentUser().getUid())
-                .child("Favorites");
+        // Настройка избранного только для авторизованных пользователей
+        if (!isGuest) {
+            favoritesRef = FirebaseDatabase.getInstance().getReference()
+                    .child("Users")
+                    .child(FirebaseAuth.getInstance().getCurrentUser().getUid())
+                    .child("Favorites");
 
-        Button btnAddToFavorites = findViewById(R.id.btnAddToFavorites);
-        btnAddToFavorites.setOnClickListener(v -> toggleFavorite());
+            ImageView btnAddToFavorites = findViewById(R.id.btnAddToFavorites);
+            btnAddToFavorites.setOnClickListener(v -> toggleFavorite());
+        } else {
+            // Для гостя меняем поведение кнопки избранного
+            ImageView btnAddToFavorites = findViewById(R.id.btnAddToFavorites);
+            btnAddToFavorites.setOnClickListener(v -> {
+                Toast.makeText(WordLearningActivity.this,
+                        "Для добавления в избранное необходимо войти в аккаунт",
+                        Toast.LENGTH_LONG).show();
+            });
+        }
     }
 
     private void requestAudioPermissions() {
@@ -215,13 +227,11 @@ public class WordLearningActivity extends AppCompatActivity {
     private void toggleRecording() {
         if (!isRecording) {
             startRecording();
-            btnRecord.setText("Остановить запись");
-            btnRecord.setBackgroundColor(getResources().getColor(R.color.red));
+            btnRecord.setImageResource(R.drawable.endrec);
             btnCheck.setEnabled(false);
         } else {
             stopRecording();
-            btnRecord.setText("Начать запись");
-            btnRecord.setBackgroundColor(getResources().getColor(R.color.primary_dark));
+            btnRecord.setImageResource(R.drawable.startrec);
             btnCheck.setEnabled(true);
             setupAudioPlayback();
         }
@@ -769,10 +779,14 @@ public class WordLearningActivity extends AppCompatActivity {
                 ((TextView) findViewById(R.id.wordTextView)).setText(wordData[0]);
                 ((TextView) findViewById(R.id.categoryTextView)).setText(wordData[2]);
                 ((TextView) findViewById(R.id.translationTextView)).setText(wordData[3]);
-                checkIfFavorite();
+
+                // Проверяем избранное только для авторизованных пользователей
+                if (!isGuest) {
+                    checkIfFavorite();
+                }
             }
         } catch (Exception e) {
-
+            // Обработка исключений
         }
     }
 
