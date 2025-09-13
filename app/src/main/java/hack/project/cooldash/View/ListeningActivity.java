@@ -52,6 +52,8 @@ public class ListeningActivity extends AppCompatActivity {
     private int currentQuestion = 0;
     private int score = 0;
     private MediaPlayer mediaPlayer;
+    // Добавляем переменную для отслеживания состояния воспроизведения
+    private boolean isPlayingAudio = false;
 
     private ProgressBar progressBar;
     private TextView progressText;
@@ -256,7 +258,16 @@ public class ListeningActivity extends AppCompatActivity {
     private void playCurrentWord() {
         if (currentQuestion >= words.size()) return;
 
+        // Проверяем, не воспроизводится ли уже аудио
+        if (isPlayingAudio) {
+            Toast.makeText(this, "Уже воспроизводится аудио", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         WordPair currentWord = words.get(currentQuestion);
+        // Блокируем кнопку
+        btnPlay.setEnabled(false);
+        isPlayingAudio = true;
         synthesizeAndPlay(currentWord.getWord());
     }
 
@@ -275,13 +286,24 @@ public class ListeningActivity extends AppCompatActivity {
                         playAudio(response.body().byteStream());
                     } catch (IOException e) {
                         Log.e(TAG, "Ошибка воспроизведения", e);
+                        // Разблокируем кнопку при ошибке
+                        btnPlay.setEnabled(true);
+                        isPlayingAudio = false;
                     }
+                } else {
+                    // Разблокируем кнопку при ошибке
+                    btnPlay.setEnabled(true);
+                    isPlayingAudio = false;
+                    Log.e(TAG, "Ошибка синтеза речи: " + response.code());
                 }
             }
 
             @Override
             public void onFailure(@NonNull Call<ResponseBody> call, @NonNull Throwable t) {
                 Log.e(TAG, "Ошибка синтеза речи", t);
+                // Разблокируем кнопку при ошибке
+                btnPlay.setEnabled(true);
+                isPlayingAudio = false;
             }
         });
     }
@@ -303,6 +325,27 @@ public class ListeningActivity extends AppCompatActivity {
         mediaPlayer = new MediaPlayer();
         mediaPlayer.setDataSource(tempFile.getAbsolutePath());
         mediaPlayer.prepare();
+
+        // Добавляем обработчик завершения воспроизведения
+        mediaPlayer.setOnCompletionListener(mp -> {
+            // Разблокируем кнопку после завершения воспроизведения
+            btnPlay.setEnabled(true);
+            isPlayingAudio = false;
+            mp.release();
+            mediaPlayer = null;
+        });
+
+        // Добавляем обработчик ошибок воспроизведения
+        mediaPlayer.setOnErrorListener((mp, what, extra) -> {
+            Log.e(TAG, "Ошибка воспроизведения: " + what + ", " + extra);
+            // Разблокируем кнопку при ошибке
+            btnPlay.setEnabled(true);
+            isPlayingAudio = false;
+            mp.release();
+            mediaPlayer = null;
+            return true;
+        });
+
         mediaPlayer.start();
     }
 
@@ -371,6 +414,8 @@ public class ListeningActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        isPlayingAudio = false; // Сбрасываем состояние
+
         if (mediaPlayer != null) {
             mediaPlayer.release();
             mediaPlayer = null;

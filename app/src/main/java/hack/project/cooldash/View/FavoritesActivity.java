@@ -8,7 +8,6 @@ import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
-import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -44,6 +43,8 @@ public class FavoritesActivity extends AppCompatActivity {
     private DatabaseReference favoritesRef;
     private LinearLayout favoritesContainer;
     private MediaPlayer mediaPlayer;
+    // Добавляем переменную для отслеживания состояния воспроизведения
+    private boolean isPlayingAudio = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -139,11 +140,7 @@ public class FavoritesActivity extends AppCompatActivity {
         playButton.setClickable(true);
         playButton.setFocusable(true);
         playButton.setScaleType(ImageView.ScaleType.FIT_CENTER);
-        playButton.setOnClickListener(v -> synthesizeText(wordData.get("word")));
-
-        // Установка foreground для ripple эффекта (если нужно)
-        // playButton.setForeground(getResources().getDrawable(R.drawable.ripple_effect));
-
+        playButton.setOnClickListener(v -> synthesizeText(wordData.get("word"), playButton));
         buttonsLayout.addView(playButton);
 
         // Delete button
@@ -161,10 +158,6 @@ public class FavoritesActivity extends AppCompatActivity {
         deleteButton.setFocusable(true);
         deleteButton.setScaleType(ImageView.ScaleType.FIT_CENTER);
         deleteButton.setOnClickListener(v -> removeFavorite(wordData.get("word")));
-
-        // Установка foreground для ripple эффекта (если нужно)
-        // deleteButton.setForeground(getResources().getDrawable(R.drawable.ripple_effect));
-
         buttonsLayout.addView(deleteButton);
 
         layout.addView(buttonsLayout);
@@ -172,11 +165,21 @@ public class FavoritesActivity extends AppCompatActivity {
         favoritesContainer.addView(card);
     }
 
-    private void synthesizeText(String text) {
+    // Добавляем параметр ImageView для блокировки конкретной кнопки
+    private void synthesizeText(String text, ImageView playButton) {
+        // Проверяем, не воспроизводится ли уже аудио
+        if (isPlayingAudio) {
+            Toast.makeText(this, "Уже воспроизводится аудио", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         JsonObject jsonObject = new JsonObject();
         jsonObject.addProperty("text", text);
-
         Toast.makeText(this, "Синтезируется речь...", Toast.LENGTH_SHORT).show();
+
+        // Блокируем кнопку
+        playButton.setEnabled(false);
+        isPlayingAudio = true;
 
         ApiClient.getApi().synthesizeText(jsonObject).enqueue(new Callback<ResponseBody>() {
             @SuppressLint("RestrictedApi")
@@ -185,21 +188,30 @@ public class FavoritesActivity extends AppCompatActivity {
                 if (response.isSuccessful()) {
                     if (response.body() != null) {
                         try {
-                            playAudio(response.body().byteStream());
+                            playAudio(response.body().byteStream(), playButton);
                             Toast.makeText(FavoritesActivity.this,
                                     "Озвучка успешна", Toast.LENGTH_SHORT).show();
                         } catch (IOException e) {
                             Log.e(TAG, "Ошибка чтения аудиопотока: ", e);
                             Toast.makeText(FavoritesActivity.this,
                                     "Ошибка воспроизведения", Toast.LENGTH_SHORT).show();
+                            // Разблокируем кнопку при ошибке
+                            playButton.setEnabled(true);
+                            isPlayingAudio = false;
                         }
                     } else {
                         Toast.makeText(FavoritesActivity.this,
                                 "Сервер не вернул аудио", Toast.LENGTH_SHORT).show();
+                        // Разблокируем кнопку при ошибке
+                        playButton.setEnabled(true);
+                        isPlayingAudio = false;
                     }
                 } else {
                     Toast.makeText(FavoritesActivity.this,
                             "Ошибка сервера: " + response.code(), Toast.LENGTH_LONG).show();
+                    // Разблокируем кнопку при ошибке
+                    playButton.setEnabled(true);
+                    isPlayingAudio = false;
                 }
             }
 
@@ -207,11 +219,16 @@ public class FavoritesActivity extends AppCompatActivity {
             public void onFailure(Call<ResponseBody> call, Throwable t) {
                 Toast.makeText(FavoritesActivity.this,
                         "Ошибка подключения: " + t.getMessage(), Toast.LENGTH_LONG).show();
+                // Разблокируем кнопку при ошибке
+                playButton.setEnabled(true);
+                isPlayingAudio = false;
             }
         });
     }
 
-    private void playAudio(InputStream inputStream) throws IOException {
+    // Добавляем параметр ImageView для разблокировки конкретной кнопки
+    @SuppressLint("RestrictedApi")
+    private void playAudio(InputStream inputStream, ImageView playButton) throws IOException {
         if (mediaPlayer != null) {
             mediaPlayer.release();
         }
@@ -228,6 +245,23 @@ public class FavoritesActivity extends AppCompatActivity {
         mediaPlayer = new MediaPlayer();
         mediaPlayer.setDataSource(tempFile.getAbsolutePath());
         mediaPlayer.prepare();
+
+        // Добавляем обработчик завершения воспроизведения
+        mediaPlayer.setOnCompletionListener(mp -> {
+            // Разблокируем кнопку после завершения воспроизведения
+            playButton.setEnabled(true);
+            isPlayingAudio = false;
+        });
+
+        // Добавляем обработчик ошибок воспроизведения
+        mediaPlayer.setOnErrorListener((mp, what, extra) -> {
+            Log.e(TAG, "Ошибка воспроизведения: " + what + ", " + extra);
+            // Разблокируем кнопку при ошибке
+            playButton.setEnabled(true);
+            isPlayingAudio = false;
+            return true;
+        });
+
         mediaPlayer.start();
     }
 
@@ -245,6 +279,8 @@ public class FavoritesActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        isPlayingAudio = false; // Сбрасываем состояние
+
         if (mediaPlayer != null) {
             mediaPlayer.release();
             mediaPlayer = null;

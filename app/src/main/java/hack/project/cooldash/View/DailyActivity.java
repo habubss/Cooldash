@@ -66,6 +66,8 @@ public class DailyActivity extends AppCompatActivity {
     private String generatedText = "";
     private int listenAttempts = MAX_LISTEN_ATTEMPTS;
     private boolean isChecked = false;
+    // Добавляем переменную для отслеживания состояния воспроизведения
+    private boolean isPlayingAudio = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -119,6 +121,7 @@ public class DailyActivity extends AppCompatActivity {
     }
 
     private void generateTatarText() {
+        Toast.makeText(this, "Генерируется предложение...", Toast.LENGTH_SHORT).show();
         loadingProgress.setVisibility(View.VISIBLE);
         playButton.setEnabled(false);
 
@@ -126,6 +129,7 @@ public class DailyActivity extends AppCompatActivity {
             showError("Нет интернет-соединения");
             generatedText = getFallbackTatarText();
             loadingProgress.setVisibility(View.GONE);
+            Toast.makeText(this, "Сгенерировано", Toast.LENGTH_SHORT).show();
             playButton.setEnabled(true);
             updateListenCount();
             return;
@@ -137,7 +141,7 @@ public class DailyActivity extends AppCompatActivity {
 
             JSONObject message = new JSONObject();
             message.put("role", "user");
-            message.put("content", "Сгенерируй одно предложение на татарском языке из 5-6 слов. Только текст, без пояснений. Не используй кавычки.");
+            message.put("content", "Сгенерируй предложение на другую тему на татарском языке из 5-8 слов. Только текст, без пояснений. Не используй кавычки.");
 
             requestBody.put("messages", new org.json.JSONArray().put(message));
             requestBody.put("max_tokens", 50);
@@ -148,6 +152,7 @@ public class DailyActivity extends AppCompatActivity {
             showError("Ошибка создания запроса");
             generatedText = getFallbackTatarText();
             loadingProgress.setVisibility(View.GONE);
+            Toast.makeText(this, "Сгенерировано", Toast.LENGTH_SHORT).show();
             playButton.setEnabled(true);
             updateListenCount();
             return;
@@ -254,7 +259,6 @@ public class DailyActivity extends AppCompatActivity {
     }
 
     private void playTatarText() {
-//        generatedText = getFallbackTatarText();
         if (generatedText.isEmpty()) {
             showError("Текст еще не загружен");
             return;
@@ -265,10 +269,20 @@ public class DailyActivity extends AppCompatActivity {
             return;
         }
 
+        // Проверяем, не воспроизводится ли уже аудио
+        if (isPlayingAudio) {
+            Toast.makeText(this, "Уже воспроизводится аудио", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         if (!isChecked) {
             listenAttempts--;
             updateListenCount();
         }
+
+        // Блокируем кнопку
+        playButton.setEnabled(false);
+        isPlayingAudio = true;
 
         synthesizeText(generatedText);
     }
@@ -290,17 +304,36 @@ public class DailyActivity extends AppCompatActivity {
         mediaPlayer = new MediaPlayer();
         mediaPlayer.setDataSource(tempFile.getAbsolutePath());
         mediaPlayer.prepare();
-        mediaPlayer.start();
 
+        // Добавляем обработчик завершения воспроизведения
         mediaPlayer.setOnCompletionListener(mp -> {
+            // Разблокируем кнопку после завершения воспроизведения
+            playButton.setEnabled(true);
+            isPlayingAudio = false;
             mp.release();
             mediaPlayer = null;
         });
+
+        // Добавляем обработчик ошибок воспроизведения
+        mediaPlayer.setOnErrorListener((mp, what, extra) -> {
+            Log.e(TAG, "Ошибка воспроизведения: " + what + ", " + extra);
+            // Разблокируем кнопку при ошибке
+            playButton.setEnabled(true);
+            isPlayingAudio = false;
+            mp.release();
+            mediaPlayer = null;
+            return true;
+        });
+
+        mediaPlayer.start();
     }
 
     private void synthesizeText(String text) {
         if (!isNetworkAvailable()) {
             showError("Нет интернета для синтеза речи");
+            // Разблокируем кнопку при ошибке
+            playButton.setEnabled(true);
+            isPlayingAudio = false;
             return;
         }
 
@@ -323,14 +356,23 @@ public class DailyActivity extends AppCompatActivity {
                             Log.e(TAG, "Ошибка чтения аудиопотока: ", e);
                             Toast.makeText(DailyActivity.this,
                                     "Ошибка воспроизведения", Toast.LENGTH_SHORT).show();
+                            // Разблокируем кнопку при ошибке
+                            playButton.setEnabled(true);
+                            isPlayingAudio = false;
                         }
                     } else {
                         Toast.makeText(DailyActivity.this,
                                 "Сервер не вернул аудио", Toast.LENGTH_SHORT).show();
+                        // Разблокируем кнопку при ошибке
+                        playButton.setEnabled(true);
+                        isPlayingAudio = false;
                     }
                 } else {
                     Toast.makeText(DailyActivity.this,
                             "Ошибка сервера: " + response.code(), Toast.LENGTH_LONG).show();
+                    // Разблокируем кнопку при ошибке
+                    playButton.setEnabled(true);
+                    isPlayingAudio = false;
                 }
             }
 
@@ -338,6 +380,9 @@ public class DailyActivity extends AppCompatActivity {
             public void onFailure(Call<ResponseBody> call, Throwable t) {
                 Toast.makeText(DailyActivity.this,
                         "Ошибка подключения: " + t.getMessage(), Toast.LENGTH_LONG).show();
+                // Разблокируем кнопку при ошибке
+                playButton.setEnabled(true);
+                isPlayingAudio = false;
             }
         });
     }
@@ -448,6 +493,8 @@ public class DailyActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        isPlayingAudio = false; // Сбрасываем состояние
+
         if (mediaPlayer != null) {
             mediaPlayer.release();
             mediaPlayer = null;

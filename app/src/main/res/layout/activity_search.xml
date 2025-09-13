@@ -20,6 +20,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="Поиск слов"
+            android:fontFamily="@font/montserrat_extrabold"
             android:textSize="20sp"
             android:textColor="@color/primary"
             android:textStyle="bold"

@@ -24,6 +24,7 @@ import android.widget.CheckBox;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -94,7 +95,7 @@ public class WordLearningActivity extends AppCompatActivity {
     private Handler seekBarHandler = new Handler();
     private Runnable updateSeekBar;
     private boolean isGuest = false;
-
+    private ProgressBar loadingIndicator;
     private void toggleFavorite() {
         if (currentWord == null) return;
 
@@ -158,6 +159,7 @@ public class WordLearningActivity extends AppCompatActivity {
         audioPreviewContainer = findViewById(R.id.audioPreviewContainer);
         btnPlayRecording = findViewById(R.id.btnPlayRecording);
         audioSeekBar = findViewById(R.id.audioSeekBar);
+        loadingIndicator = findViewById(R.id.loadingIndicator);
 
         btnPlayRecording.setOnClickListener(v -> togglePlayback());
 
@@ -380,11 +382,17 @@ public class WordLearningActivity extends AppCompatActivity {
     }
 
     private void checkPronunciation() {
+        LinearLayout resultContainer = findViewById(R.id.resultContainer);
+        LinearLayout feedbackAudioContainer = findViewById(R.id.feedbackAudioContainer);
+        resultContainer.setVisibility(View.GONE);
+        feedbackAudioContainer.setVisibility(View.GONE);
+        loadingIndicator.setVisibility(View.VISIBLE);
+
         if (currentWord == null || currentWord.isEmpty()) {
             Toast.makeText(this, "Нет текущего слова", Toast.LENGTH_SHORT).show();
+            loadingIndicator.setVisibility(View.GONE);
             return;
         }
-        Toast.makeText(this, "Проверяется...", Toast.LENGTH_SHORT).show();
 
         File audioFile = new File(currentAudioPath);
         RequestBody audioBody = RequestBody.create(MediaType.parse("audio/aac"), audioFile);
@@ -395,6 +403,7 @@ public class WordLearningActivity extends AppCompatActivity {
         PronunciationApiClient.getApi().checkPronunciation(textPart, audioPart).enqueue(new Callback<PronunciationResult>() {
             @Override
             public void onResponse(Call<PronunciationResult> call, Response<PronunciationResult> response) {
+                loadingIndicator.setVisibility(View.GONE);
                 if (response.isSuccessful() && response.body() != null) {
                     PronunciationResult result = response.body();
                     Log.d(TAG, "Response: " + new Gson().toJson(result));
@@ -417,6 +426,7 @@ public class WordLearningActivity extends AppCompatActivity {
 
             @Override
             public void onFailure(Call<PronunciationResult> call, Throwable t) {
+                loadingIndicator.setVisibility(View.GONE);
                 Log.e(TAG, "Ошибка сети: ", t);
                 Toast.makeText(WordLearningActivity.this,
                         "Ошибка подключения: " + t.getMessage(), Toast.LENGTH_LONG).show();
@@ -647,6 +657,8 @@ public class WordLearningActivity extends AppCompatActivity {
         LinearLayout resultContainer = findViewById(R.id.resultContainer);
         resultContainer.setVisibility(View.GONE);
 
+        loadingIndicator.setVisibility(View.GONE);
+
         LinearLayout feedbackAudioContainer = findViewById(R.id.feedbackAudioContainer);
         feedbackAudioContainer.setVisibility(View.GONE);
 
@@ -813,6 +825,8 @@ public class WordLearningActivity extends AppCompatActivity {
 
         Log.d(TAG, "Отправка запроса на синтез: " + text);
 
+        btnSpeak.setEnabled(false);
+
         Toast.makeText(this, "Синтезируется речь...", Toast.LENGTH_SHORT).show();
 
         ApiClient.getApi().synthesizeText(jsonObject).enqueue(new Callback<ResponseBody>() {
@@ -829,11 +843,13 @@ public class WordLearningActivity extends AppCompatActivity {
                             Log.e(TAG, "Ошибка чтения аудиопотока: ", e);
                             Toast.makeText(WordLearningActivity.this,
                                     "Ошибка воспроизведения", Toast.LENGTH_SHORT).show();
+                            btnSpeak.setEnabled(true);
                         }
                     } else {
                         Log.e(TAG, "Пустое тело ответа");
                         Toast.makeText(WordLearningActivity.this,
                                 "Сервер не вернул аудио", Toast.LENGTH_SHORT).show();
+                        btnSpeak.setEnabled(true);
                     }
                 } else {
                     try {
@@ -844,6 +860,7 @@ public class WordLearningActivity extends AppCompatActivity {
                     }
                     Toast.makeText(WordLearningActivity.this,
                             "Ошибка сервера: " + response.code(), Toast.LENGTH_LONG).show();
+                    btnSpeak.setEnabled(true);
                 }
             }
 
@@ -852,6 +869,7 @@ public class WordLearningActivity extends AppCompatActivity {
                 Log.e(TAG, "Ошибка сети: " + Log.getStackTraceString(t));
                 Toast.makeText(WordLearningActivity.this,
                         "Ошибка подключения: " + t.getMessage(), Toast.LENGTH_LONG).show();
+                btnSpeak.setEnabled(true);
             }
         });
     }
@@ -873,12 +891,24 @@ public class WordLearningActivity extends AppCompatActivity {
         mediaPlayer = new MediaPlayer();
         mediaPlayer.setDataSource(tempFile.getAbsolutePath());
         mediaPlayer.prepare();
+
+        mediaPlayer.setOnCompletionListener(mp -> {
+            btnSpeak.setEnabled(true);
+        });
+
+        mediaPlayer.setOnErrorListener((mp, what, extra) -> {
+            Log.e(TAG, "Ошибка воспроизведения: " + what + ", " + extra);
+            btnSpeak.setEnabled(true);
+            return true;
+        });
+
         mediaPlayer.start();
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        btnSpeak.setEnabled(true);
         if (mediaPlayer != null) {
             mediaPlayer.release();
             mediaPlayer = null;

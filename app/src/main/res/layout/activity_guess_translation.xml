@@ -30,6 +30,7 @@
             <!-- Прогресс -->
             <TextView
                 android:id="@+id/progressText"
+                android:fontFamily="@font/montserrat_extrabold"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Вопрос 1 из 10"
