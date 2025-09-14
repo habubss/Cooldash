@@ -1,6 +1,7 @@
 package hack.project.cooldash.View;
 
 import android.annotation.SuppressLint;
+import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.media.MediaPlayer;
 import android.os.Bundle;
@@ -40,6 +41,7 @@ public class FavoritesActivity extends AppCompatActivity {
     private static final String TAG = "FavoritesActivity";
     private DatabaseReference favoritesRef;
     private LinearLayout favoritesContainer;
+    private TextView back;
     private MediaPlayer mediaPlayer;
     // Добавляем переменную для отслеживания состояния воспроизведения
     private boolean isPlayingAudio = false;
@@ -50,6 +52,13 @@ public class FavoritesActivity extends AppCompatActivity {
         setContentView(R.layout.activity_favorites);
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         favoritesContainer = findViewById(R.id.favoritesContainer);
+        back = findViewById(R.id.back);
+        back.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                startActivity(new Intent(FavoritesActivity.this, MainActivity.class));
+            }
+        });
 
         String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
         favoritesRef = FirebaseDatabase.getInstance().getReference()

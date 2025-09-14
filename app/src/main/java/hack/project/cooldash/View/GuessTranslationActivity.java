@@ -2,6 +2,7 @@ package hack.project.cooldash.View;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
+import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.res.AssetManager;
 import android.os.AsyncTask;
@@ -49,12 +50,20 @@ public class GuessTranslationActivity extends AppCompatActivity {
     private MaterialButton nextButton;
     private CardView resultCard;
     private TextView scoreText;
-    private TextView errorText;
+    private TextView errorText, back;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_guess_translation);
+        back = findViewById(R.id.back);
+
+        back.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                startActivity(new Intent(GuessTranslationActivity.this, MainActivity.class));
+            }
+        });
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         overridePendingTransition(R.anim.slide_in_right, R.anim.fade_out);
 

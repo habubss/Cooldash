@@ -1,6 +1,8 @@
 package hack.project.cooldash.View;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
+import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
@@ -96,6 +98,7 @@ public class WordLearningActivity extends AppCompatActivity {
     private Runnable updateSeekBar;
     private boolean isGuest = false;
     private ProgressBar loadingIndicator;
+    private TextView back;
     private void toggleFavorite() {
         if (currentWord == null) return;
 
@@ -130,11 +133,20 @@ public class WordLearningActivity extends AppCompatActivity {
         }
     }
 
+    @SuppressLint("MissingInflatedId")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_word_learning);
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+        back = findViewById(R.id.back);
+
+        back.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                startActivity(new Intent(WordLearningActivity.this, MainActivity.class));
+            }
+        });
 
         // Проверяем гостевой режим
         isGuest = getIntent().getBooleanExtra("isGuest", false);

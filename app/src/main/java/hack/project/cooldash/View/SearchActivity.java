@@ -1,5 +1,7 @@
 package hack.project.cooldash.View;
 
+import android.annotation.SuppressLint;
+import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.res.AssetManager;
 import android.os.Bundle;
@@ -34,7 +36,7 @@ import hack.project.cooldash.R;
 import hack.project.cooldash.WordDefinition;
 
 public class SearchActivity extends AppCompatActivity {
-
+    private TextView back;
     private EditText searchInput;
     private LinearLayout resultsContainer;
     private List<WordDefinition> dictionary = new ArrayList<>();
@@ -45,11 +47,20 @@ public class SearchActivity extends AppCompatActivity {
     private Map<String, List<WordDefinition>> translationIndex = new HashMap<>();
     private ExecutorService searchExecutor = Executors.newSingleThreadExecutor();
 
+    @SuppressLint("MissingInflatedId")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_search);
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+        back = findViewById(R.id.back);
+
+        back.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                startActivity(new Intent(SearchActivity.this, MainActivity.class));
+            }
+        });
         searchInput = findViewById(R.id.search_input);
         ImageButton searchButton = findViewById(R.id.search_button);
         resultsContainer = findViewById(R.id.results_container);

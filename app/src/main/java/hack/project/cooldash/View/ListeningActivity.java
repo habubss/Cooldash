@@ -2,6 +2,7 @@ package hack.project.cooldash.View;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
+import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.res.AssetManager;
 import android.media.MediaPlayer;
@@ -56,7 +57,7 @@ public class ListeningActivity extends AppCompatActivity {
     private boolean isPlayingAudio = false;
 
     private ProgressBar progressBar;
-    private TextView progressText;
+    private TextView progressText, back;
     private MaterialButton btnPlay;
     private GridLayout optionsGrid;
     private MaterialButton nextButton;
@@ -68,6 +69,14 @@ public class ListeningActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_listening);
+        back = findViewById(R.id.back);
+
+        back.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                startActivity(new Intent(ListeningActivity.this, MainActivity.class));
+            }
+        });
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         overridePendingTransition(R.anim.slide_in_right, R.anim.fade_out);
 

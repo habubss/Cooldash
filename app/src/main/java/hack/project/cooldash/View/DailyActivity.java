@@ -1,6 +1,7 @@
 package hack.project.cooldash.View;
 
 import android.annotation.SuppressLint;
+import android.content.Intent;
 import android.media.MediaPlayer;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
@@ -63,7 +64,7 @@ public class DailyActivity extends AppCompatActivity {
     private ProgressBar loadingProgress;
     private CardView resultCard;
     private TextView resultTextView;
-    private TextView correctTextView;
+    private TextView correctTextView, back;
 
     private RequestQueue requestQueue;
     private MediaPlayer mediaPlayer;
@@ -76,6 +77,14 @@ public class DailyActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_daily);
+        back = findViewById(R.id.back);
+
+        back.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                startActivity(new Intent(DailyActivity.this, MainActivity.class));
+            }
+        });
 
         dailyManager = new DailyManager(this);
 

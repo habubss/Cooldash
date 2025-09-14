@@ -1,7 +1,9 @@
 package hack.project.cooldash.View;
 
+import android.annotation.SuppressLint;
 import android.content.ClipData;
 import android.content.ClipboardManager;
+import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.os.Bundle;
 import android.util.Log;
@@ -40,7 +42,7 @@ public class TranslaterActivity extends AppCompatActivity {
     private static final String TAG = "TranslaterActivity";
 
     private EditText inputText;
-    private TextView outputText;
+    private TextView outputText, back;
     private Spinner sourceLangSpinner;
     private Spinner targetLangSpinner;
     private ImageView swapButton;
@@ -49,11 +51,20 @@ public class TranslaterActivity extends AppCompatActivity {
     private String currentDirection = "rus2tat";
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
+    @SuppressLint("MissingInflatedId")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_translater);
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+        back = findViewById(R.id.back);
+
+        back.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                startActivity(new Intent(TranslaterActivity.this, MainActivity.class));
+            }
+        });
         client = createUnsafeOkHttpClient();
         initializeViews();
         setupSpinners();

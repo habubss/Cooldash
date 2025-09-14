@@ -27,6 +27,19 @@
             android:orientation="vertical"
             android:padding="24dp">
 
+            <TextView
+                android:id="@+id/back"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="❮Назад"
+                android:fontFamily="@font/montserrat_extrabold"
+                android:textSize="16sp"
+                android:textColor="@color/primary"
+                android:padding="8dp"
+                android:layout_alignParentTop="true"
+                android:layout_alignParentStart="true"
+                android:gravity="center_vertical"/>
+
             <!-- Прогресс -->
             <TextView
                 android:id="@+id/progressText"
