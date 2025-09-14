@@ -1,7 +1,5 @@
 package hack.project.cooldash.View;
 
-import static androidx.fragment.app.FragmentManager.TAG;
-
 import android.annotation.SuppressLint;
 import android.content.pm.ActivityInfo;
 import android.media.MediaPlayer;
@@ -39,7 +37,7 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 public class FavoritesActivity extends AppCompatActivity {
-
+    private static final String TAG = "FavoritesActivity";
     private DatabaseReference favoritesRef;
     private LinearLayout favoritesContainer;
     private MediaPlayer mediaPlayer;

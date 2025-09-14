@@ -24,7 +24,11 @@ import java.io.InputStream;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import hack.project.cooldash.R;
 import hack.project.cooldash.WordDefinition;
@@ -35,6 +39,11 @@ public class SearchActivity extends AppCompatActivity {
     private LinearLayout resultsContainer;
     private List<WordDefinition> dictionary = new ArrayList<>();
     private List<WordDefinition> allWords = new ArrayList<>();
+
+    // Оптимизированные структуры данных для быстрого поиска
+    private Map<String, List<WordDefinition>> wordIndex = new HashMap<>();
+    private Map<String, List<WordDefinition>> translationIndex = new HashMap<>();
+    private ExecutorService searchExecutor = Executors.newSingleThreadExecutor();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,12 +62,25 @@ public class SearchActivity extends AppCompatActivity {
 
         searchInput.addTextChangedListener(new TextWatcher() {
             @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {
-                performSearch();
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                // Используем debounce для избежания множественных поисков при быстром вводе
+                resultsContainer.removeCallbacks(searchRunnable);
+                resultsContainer.postDelayed(searchRunnable, 300); // Задержка 300ms
             }
+
             @Override public void afterTextChanged(Editable s) {}
         });
     }
+
+    // Runnable для отложенного поиска
+    private Runnable searchRunnable = new Runnable() {
+        @Override
+        public void run() {
+            performSearch();
+        }
+    };
 
     private void loadDictionaryFromAssets() {
         try {
@@ -77,10 +99,37 @@ public class SearchActivity extends AppCompatActivity {
             if (loadedWords != null) {
                 dictionary = loadedWords;
                 allWords = new ArrayList<>(loadedWords);
+
+                // Строим индексы для быстрого поиска
+                buildSearchIndexes();
             }
         } catch (IOException e) {
             e.printStackTrace();
             Toast.makeText(this, "Ошибка загрузки словаря", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void buildSearchIndexes() {
+        for (WordDefinition word : dictionary) {
+            if (word != null) {
+                // Индекс по слову
+                String wordKey = word.getWord() != null ? word.getWord().toLowerCase() : "";
+                if (!wordKey.isEmpty()) {
+                    if (!wordIndex.containsKey(wordKey)) {
+                        wordIndex.put(wordKey, new ArrayList<>());
+                    }
+                    wordIndex.get(wordKey).add(word);
+                }
+
+                // Индекс по переводу
+                String translationKey = word.getTranslation() != null ? word.getTranslation().toLowerCase() : "";
+                if (!translationKey.isEmpty()) {
+                    if (!translationIndex.containsKey(translationKey)) {
+                        translationIndex.put(translationKey, new ArrayList<>());
+                    }
+                    translationIndex.get(translationKey).add(word);
+                }
+            }
         }
     }
 
@@ -102,28 +151,54 @@ public class SearchActivity extends AppCompatActivity {
     }
 
     private void performSearch() {
-        String query = searchInput.getText() != null ?
+        final String query = searchInput.getText() != null ?
                 searchInput.getText().toString().trim().toLowerCase() : "";
-        resultsContainer.removeAllViews();
+
+        // Очищаем контейнер в UI потоке
+        runOnUiThread(() -> resultsContainer.removeAllViews());
 
         if (query.isEmpty()) {
-            showInitialWords();
+            runOnUiThread(this::showInitialWords);
             return;
         }
 
-        boolean hasResults = false;
-        for (WordDefinition word : dictionary) {
-            if (word != null &&
-                    (containsIgnoreNull(word.getWord(), query) ||
-                            containsIgnoreNull(word.getTranslation(), query))) {
-                addWordResultView(word);
-                hasResults = true;
-            }
-        }
+        // Выполняем поиск в фоновом потоке
+        searchExecutor.execute(() -> {
+            List<WordDefinition> results = new ArrayList<>();
 
-        if (!hasResults) {
-            addHintText("Слово не найдено");
-        }
+            // Быстрый поиск по индексам
+            if (wordIndex.containsKey(query)) {
+                results.addAll(wordIndex.get(query));
+            }
+
+            if (translationIndex.containsKey(query)) {
+                results.addAll(translationIndex.get(query));
+            }
+
+            // Если точного совпадения нет, ищем частичные совпадения
+            if (results.isEmpty()) {
+                for (WordDefinition word : dictionary) {
+                    if (word != null &&
+                            (containsIgnoreNull(word.getWord(), query) ||
+                                    containsIgnoreNull(word.getTranslation(), query))) {
+                        results.add(word);
+                    }
+                }
+            }
+
+            // Отображаем результаты в UI потоке
+            runOnUiThread(() -> {
+                resultsContainer.removeAllViews();
+
+                if (results.isEmpty()) {
+                    addHintText("Слово не найдено");
+                } else {
+                    for (WordDefinition word : results) {
+                        addWordResultView(word);
+                    }
+                }
+            });
+        });
     }
 
     private boolean containsIgnoreNull(String str, String query) {
@@ -172,5 +247,11 @@ public class SearchActivity extends AppCompatActivity {
             case "Pron": return "Местоимение";
             default: return type;
         }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        searchExecutor.shutdown();
     }
 }

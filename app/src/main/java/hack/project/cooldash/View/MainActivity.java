@@ -6,25 +6,33 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 
 import hack.project.cooldash.R;
+import hack.project.cooldash.Utils.DailyManager;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
     private boolean isGuest = false;
+    private DailyManager dailyManager;
+    private TextView scoreTextView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+
+        dailyManager = new DailyManager(this);
+        scoreTextView = findViewById(R.id.score);
 
         // Проверяем, вошел ли пользователь как гость
         isGuest = getIntent().getBooleanExtra("isGuest", false);
@@ -35,15 +43,15 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
+        updateStreakCounter();
+
         TextView logoutButton = findViewById(R.id.logout_btn);
         ImageView favoriteLayout = findViewById(R.id.layout_favorites);
 
         logoutButton.setOnClickListener(v -> {
             if (isGuest) {
-                // Для гостя переход на экран логина
                 startActivity(new Intent(MainActivity.this, LoginActivity.class));
             } else {
-                // Для авторизованного пользователя - выход
                 FirebaseAuth.getInstance().signOut();
                 startActivity(new Intent(MainActivity.this, LoginActivity.class));
             }
@@ -76,12 +84,10 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 if (isGuest) {
-                    // Для гостя показываем сообщение о необходимости регистрации
                     Toast.makeText(MainActivity.this,
                             "Для доступа к ежедневному заданию необходимо войти в аккаунт",
                             Toast.LENGTH_LONG).show();
                 } else {
-                    // Для авторизованного пользователя - стандартное поведение
                     try {
                         startActivity(new Intent(MainActivity.this, DailyActivity.class));
                         overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
@@ -133,7 +139,6 @@ public class MainActivity extends AppCompatActivity {
                 Log.i(TAG, "Нажатие на 'Угадать перевод' зафиксировано");
                 try {
                     startActivity(new Intent(MainActivity.this, ListeningActivity.class));
-                    overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
                 } catch (Exception e) {
                     Log.e(TAG, "Ошибка перехода: " + e.getMessage());
                     showError("Не удалось открыть раздел");
@@ -147,7 +152,6 @@ public class MainActivity extends AppCompatActivity {
                 Log.i(TAG, "Нажатие на 'Угадать перевод' зафиксировано");
                 try {
                     startActivity(new Intent(MainActivity.this, GuessTranslationActivity.class));
-                    overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
                 } catch (Exception e) {
                     Log.e(TAG, "Ошибка перехода: " + e.getMessage());
                     showError("Не удалось открыть раздел");
@@ -184,6 +188,34 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
+    }
+
+    private void updateStreakCounter() {
+        if (!isGuest) {
+            // Сначала синхронизируем с Firebase
+            dailyManager.syncFromFirebase(new OnCompleteListener<Void>() {
+                @Override
+                public void onComplete(@NonNull Task<Void> task) {
+                    runOnUiThread(() -> {
+                        int streak = dailyManager.getCurrentStreak();
+                        scoreTextView.setText(String.valueOf(streak));
+                        scoreTextView.setVisibility(View.VISIBLE);
+
+                        if (!task.isSuccessful() && task.getException() != null) {
+                            Log.e(TAG, "Ошибка синхронизации с Firebase: " + task.getException().getMessage());
+                        }
+                    });
+                }
+            });
+        } else {
+            scoreTextView.setVisibility(View.GONE);
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        updateStreakCounter();
     }
 
     private void showError(String message) {

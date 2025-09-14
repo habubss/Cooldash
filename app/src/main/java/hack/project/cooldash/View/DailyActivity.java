@@ -28,6 +28,8 @@ import com.android.volley.RetryPolicy;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 import com.google.gson.JsonObject;
 
 import org.json.JSONException;
@@ -43,6 +45,7 @@ import java.util.Random;
 
 import hack.project.cooldash.Controller.ApiClient;
 import hack.project.cooldash.R;
+import hack.project.cooldash.Utils.DailyManager;
 import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -52,6 +55,7 @@ public class DailyActivity extends AppCompatActivity {
     private static final String TAG = "DailyActivity";
     private static final int MAX_LISTEN_ATTEMPTS = 3;
 
+    private DailyManager dailyManager;
     private TextView listenCountTextView;
     private EditText inputEditText;
     private Button checkButton;
@@ -66,13 +70,21 @@ public class DailyActivity extends AppCompatActivity {
     private String generatedText = "";
     private int listenAttempts = MAX_LISTEN_ATTEMPTS;
     private boolean isChecked = false;
-    // Добавляем переменную для отслеживания состояния воспроизведения
     private boolean isPlayingAudio = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_daily);
+
+        dailyManager = new DailyManager(this);
+
+        // Проверяем, может ли пользователь играть сегодня
+        if (!dailyManager.canPlayDaily()) {
+            showError("Вы уже прошли ежедневный диктант сегодня. Попробуйте завтра!");
+            finish();
+            return;
+        }
 
         initializeViews();
         setupClickListeners();
@@ -138,11 +150,9 @@ public class DailyActivity extends AppCompatActivity {
         JSONObject requestBody = new JSONObject();
         try {
             requestBody.put("model", "deepseek-chat");
-
             JSONObject message = new JSONObject();
             message.put("role", "user");
-            message.put("content", "Сгенерируй предложение на другую тему на татарском языке из 5-8 слов. Только текст, без пояснений. Не используй кавычки.");
-
+            message.put("content", "Сгенерируй предложение на совершенно другую тему на татарском языке из 5-8 слов. Только текст, без пояснений. Не используй кавычки.");
             requestBody.put("messages", new org.json.JSONArray().put(message));
             requestBody.put("max_tokens", 50);
             requestBody.put("temperature", 0.7);
@@ -167,29 +177,23 @@ public class DailyActivity extends AppCompatActivity {
                     public void onResponse(JSONObject response) {
                         try {
                             Log.d(TAG, "DeepSeek Response: " + response.toString());
-
                             String content = response.getJSONArray("choices")
                                     .getJSONObject(0)
                                     .getJSONObject("message")
                                     .getString("content")
                                     .trim();
-
                             content = content.replaceAll("^[\"']|[\"']$", "").trim();
-
                             String[] sentences = content.split("[.!?]");
                             if (sentences.length > 0) {
                                 generatedText = sentences[0].trim();
                             } else {
                                 generatedText = content;
                             }
-
                             if (generatedText.isEmpty()) {
                                 generatedText = getFallbackTatarText();
                             }
-
                             Log.d(TAG, "Generated text: " + generatedText);
                             updateListenCount();
-
                         } catch (JSONException e) {
                             Log.e(TAG, "Error parsing DeepSeek response: " + e.getMessage());
                             showError("Ошибка обработки ответа");
@@ -203,7 +207,6 @@ public class DailyActivity extends AppCompatActivity {
                     @Override
                     public void onErrorResponse(VolleyError error) {
                         Log.e(TAG, "DeepSeek API Error: " + error.toString());
-
                         if (error instanceof com.android.volley.NoConnectionError) {
                             showError("Нет соединения с интернетом");
                         } else if (error instanceof com.android.volley.TimeoutError) {
@@ -213,7 +216,6 @@ public class DailyActivity extends AppCompatActivity {
                         } else {
                             showError("Ошибка сети: " + error.getMessage());
                         }
-
                         generatedText = getFallbackTatarText();
                         loadingProgress.setVisibility(View.GONE);
                         playButton.setEnabled(true);
@@ -263,27 +265,20 @@ public class DailyActivity extends AppCompatActivity {
             showError("Текст еще не загружен");
             return;
         }
-
         if (listenAttempts <= 0 && !isChecked) {
             showError("Попытки прослушивания закончились");
             return;
         }
-
-        // Проверяем, не воспроизводится ли уже аудио
         if (isPlayingAudio) {
             Toast.makeText(this, "Уже воспроизводится аудио", Toast.LENGTH_SHORT).show();
             return;
         }
-
         if (!isChecked) {
             listenAttempts--;
             updateListenCount();
         }
-
-        // Блокируем кнопку
         playButton.setEnabled(false);
         isPlayingAudio = true;
-
         synthesizeText(generatedText);
     }
 
@@ -291,7 +286,6 @@ public class DailyActivity extends AppCompatActivity {
         if (mediaPlayer != null) {
             mediaPlayer.release();
         }
-
         File tempFile = File.createTempFile("audio", ".wav", getCacheDir());
         FileOutputStream fos = new FileOutputStream(tempFile);
         byte[] buffer = new byte[1024];
@@ -300,48 +294,36 @@ public class DailyActivity extends AppCompatActivity {
             fos.write(buffer, 0, length);
         }
         fos.close();
-
         mediaPlayer = new MediaPlayer();
         mediaPlayer.setDataSource(tempFile.getAbsolutePath());
         mediaPlayer.prepare();
-
-        // Добавляем обработчик завершения воспроизведения
         mediaPlayer.setOnCompletionListener(mp -> {
-            // Разблокируем кнопку после завершения воспроизведения
             playButton.setEnabled(true);
             isPlayingAudio = false;
             mp.release();
             mediaPlayer = null;
         });
-
-        // Добавляем обработчик ошибок воспроизведения
         mediaPlayer.setOnErrorListener((mp, what, extra) -> {
             Log.e(TAG, "Ошибка воспроизведения: " + what + ", " + extra);
-            // Разблокируем кнопку при ошибке
             playButton.setEnabled(true);
             isPlayingAudio = false;
             mp.release();
             mediaPlayer = null;
             return true;
         });
-
         mediaPlayer.start();
     }
 
     private void synthesizeText(String text) {
         if (!isNetworkAvailable()) {
             showError("Нет интернета для синтеза речи");
-            // Разблокируем кнопку при ошибке
             playButton.setEnabled(true);
             isPlayingAudio = false;
             return;
         }
-
         JsonObject jsonObject = new JsonObject();
         jsonObject.addProperty("text", text);
-
         Toast.makeText(this, "Синтезируется речь...", Toast.LENGTH_SHORT).show();
-
         ApiClient.getApi().synthesizeText(jsonObject).enqueue(new Callback<ResponseBody>() {
             @SuppressLint("RestrictedApi")
             @Override
@@ -350,37 +332,27 @@ public class DailyActivity extends AppCompatActivity {
                     if (response.body() != null) {
                         try {
                             playAudio(response.body().byteStream());
-                            Toast.makeText(DailyActivity.this,
-                                    "Озвучка успешна", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(DailyActivity.this, "Озвучка успешна", Toast.LENGTH_SHORT).show();
                         } catch (IOException e) {
                             Log.e(TAG, "Ошибка чтения аудиопотока: ", e);
-                            Toast.makeText(DailyActivity.this,
-                                    "Ошибка воспроизведения", Toast.LENGTH_SHORT).show();
-                            // Разблокируем кнопку при ошибке
+                            Toast.makeText(DailyActivity.this, "Ошибка воспроизведения", Toast.LENGTH_SHORT).show();
                             playButton.setEnabled(true);
                             isPlayingAudio = false;
                         }
                     } else {
-                        Toast.makeText(DailyActivity.this,
-                                "Сервер не вернул аудио", Toast.LENGTH_SHORT).show();
-                        // Разблокируем кнопку при ошибке
+                        Toast.makeText(DailyActivity.this, "Сервер не вернул аудио", Toast.LENGTH_SHORT).show();
                         playButton.setEnabled(true);
                         isPlayingAudio = false;
                     }
                 } else {
-                    Toast.makeText(DailyActivity.this,
-                            "Ошибка сервера: " + response.code(), Toast.LENGTH_LONG).show();
-                    // Разблокируем кнопку при ошибке
+                    Toast.makeText(DailyActivity.this, "Ошибка сервера: " + response.code(), Toast.LENGTH_LONG).show();
                     playButton.setEnabled(true);
                     isPlayingAudio = false;
                 }
             }
-
             @Override
             public void onFailure(Call<ResponseBody> call, Throwable t) {
-                Toast.makeText(DailyActivity.this,
-                        "Ошибка подключения: " + t.getMessage(), Toast.LENGTH_LONG).show();
-                // Разблокируем кнопку при ошибке
+                Toast.makeText(DailyActivity.this, "Ошибка подключения: " + t.getMessage(), Toast.LENGTH_LONG).show();
                 playButton.setEnabled(true);
                 isPlayingAudio = false;
             }
@@ -393,7 +365,6 @@ public class DailyActivity extends AppCompatActivity {
             text += " (проверено)";
         }
         listenCountTextView.setText(text);
-
         checkButton.setEnabled(!inputEditText.getText().toString().trim().isEmpty() &&
                 (listenAttempts < MAX_LISTEN_ATTEMPTS || isChecked));
     }
@@ -404,16 +375,30 @@ public class DailyActivity extends AppCompatActivity {
             showError("Введите текст для проверки");
             return;
         }
-
         isChecked = true;
         updateListenCount();
-
         String normalizedUser = normalizeText(userInput);
         String normalizedOriginal = normalizeText(generatedText);
-
         boolean isCorrect = normalizedUser.equals(normalizedOriginal);
 
-        showResult(isCorrect, userInput, generatedText);
+        // Сохраняем результат в Firebase
+        dailyManager.completeDaily(isCorrect, new OnCompleteListener<Void>() {
+            @Override
+            public void onComplete(Task<Void> task) {
+                runOnUiThread(() -> {
+                    if (task.isSuccessful()) {
+                        showResult(isCorrect, userInput, generatedText);
+                    } else {
+                        showError("Ошибка сохранения результата: " + task.getException().getMessage());
+                        showResult(isCorrect, userInput, generatedText);
+                    }
+                    // Блокируем возможность повторной проверки
+                    checkButton.setEnabled(false);
+                    inputEditText.setEnabled(false);
+                    playButton.setEnabled(false);
+                });
+            }
+        });
     }
 
     private String normalizeText(String text) {
@@ -425,7 +410,6 @@ public class DailyActivity extends AppCompatActivity {
 
     private void showResult(boolean isCorrect, String userInput, String originalText) {
         resultCard.setVisibility(View.VISIBLE);
-
         if (isCorrect) {
             resultTextView.setText("✅ Верно! Вы правильно написали текст.");
             resultTextView.setTextColor(getResources().getColor(android.R.color.holo_green_dark));
@@ -433,57 +417,35 @@ public class DailyActivity extends AppCompatActivity {
             resultTextView.setText("❌ Есть ошибки. Сравните с оригиналом:");
             resultTextView.setTextColor(getResources().getColor(android.R.color.holo_red_dark));
         }
-
         SpannableString highlightedText = highlightDifferences(userInput, originalText);
         correctTextView.setText(highlightedText);
-
         listenCountTextView.setText("Попыток: неограниченно (после проверки)");
     }
 
     private SpannableString highlightDifferences(String userText, String originalText) {
         SpannableString spannable = new SpannableString(originalText);
-
-        // Нормализуем оба текста для сравнения
         String normUser = normalizeText(userText);
         String normOriginal = normalizeText(originalText);
-
         String[] userWords = normUser.split("\\s+");
         String[] originalWords = normOriginal.split("\\s+");
         String[] origWordsWithPunct = originalText.split("\\s+");
-
         int pos = 0;
         for (int i = 0; i < origWordsWithPunct.length; i++) {
             String wordWithPunct = origWordsWithPunct[i];
             int start = pos;
             int end = pos + wordWithPunct.length();
-
-            // Проверяем совпадение нормализованных слов
             boolean matches = i < userWords.length &&
                     i < originalWords.length &&
                     userWords[i].equals(originalWords[i]);
-
             if (!matches) {
                 spannable.setSpan(
                         new ForegroundColorSpan(getResources().getColor(android.R.color.holo_red_dark)),
                         start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
                 );
             }
-
             pos = end + 1;
         }
-
         return spannable;
-    }
-
-    private int findWordPosition(String text, String word, int wordIndex) {
-        String[] words = text.toLowerCase().split("\\s+");
-        if (wordIndex >= words.length) return -1;
-
-        int position = 0;
-        for (int i = 0; i < wordIndex; i++) {
-            position += words[i].length() + 1;
-        }
-        return position;
     }
 
     private void showError(String message) {
@@ -493,8 +455,7 @@ public class DailyActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        isPlayingAudio = false; // Сбрасываем состояние
-
+        isPlayingAudio = false;
         if (mediaPlayer != null) {
             mediaPlayer.release();
             mediaPlayer = null;
